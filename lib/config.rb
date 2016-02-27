@@ -23,23 +23,8 @@
 
 require 'nokogiri'
 require 'logger'
+require_relative 'target'
 
-class UpdateTarget
-   def initialize(name, file, size, md5, version, runable)
-      @name = name
-      @file = file
-      @size = size
-      @md5 = md5
-      @version = version
-      @runable = runable
-   end
-
-   def to_s
-      return sprintf("%s, %s, %s, %s, %s, %s\n",@name,@file,@size,@md5,@version,@runable)
-   end
-end # class UpdateTarget
-
-#----------------------------------------------------------------------------
 
 class ConfigInfo
 
@@ -78,10 +63,17 @@ class ConfigInfo
       return UpdateTarget.new(name, file, size, md5, version, runable)
    end
 
+   # to be called internally
    def getTargets
       @doc.xpath("//target").each do |node|
          @targetList.push getTarget(node)
       end
    end
+
+   # part of api
+   def getListOfTargets
+      return @targetList
+   end
+   
 
 end # class ConfigInfo

@@ -1,0 +1,35 @@
+<root>
+
+   <updater>
+      <baseurl>http://fallofromegame.com/alamazeorders/downloads</baseurl>
+      <name>Banana Auto Updater</name>
+      <file>updater.exe</file>
+      <size>10000</size>
+      <md5>e0df571ac677021d4ed6f0905a62f6ca</md5>
+      <version>1.0.0</version>
+      <runable>true</runable>
+   </updater>
+
+   <targets>
+
+      <target>
+         <name>BananaMap</name>
+         <file>parserGUI.exe</file>
+         <size>7959929</size>
+         <md5>2d57725bce79a810f1de33a8696480d4</md5>
+         <version>2.2.0</version>
+         <runable>true</runable>
+      </target>
+
+      <target>
+         <name>Banana Map User Manual</name>
+         <file>TurnParserInstructions.doc</file>
+         <size>2153472</size>
+         <md5>df3619979d2c1034595745fbd9f5c8f5</md5>
+         <version>1.9.4</version>
+         <runable>false</runable>
+      </target>
+
+   </targets>
+
+</root>
