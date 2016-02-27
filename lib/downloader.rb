@@ -100,13 +100,31 @@ class Downloader
       return md5
    end
    
-   def checkMD5Sum(targetFile,targetSum)
+   def checkMD5Sum(targetFile,targetSum, quiet=false)
+      matches=false
+      $LOG.debug("Checking MD5 for file(%s) target(%s)" % [targetFile,targetSum]) unless quiet
       actualSum=getMD5Sum(targetFile)
-      $LOG.info("Checking MD5 for file(%s) target(%s) actualSum(%s)" % [targetFile,targetSum,actualSum])
-      return actualSum == targetSum
+      if actualSum == targetSum
+         echoLog("Verified MD5 for file(%s) target(%s) == actualSum(%s)" % [targetFile,targetSum,actualSum]) unless quiet
+         matches=true
+      else
+         matches=false
+         echoLog("ERROR: Invalid MD5 for file(%s) target(%s) != actualSum(%s)" % [targetFile,targetSum,actualSum]) unless quiet
+      end
+      return matches
    end
 
    def fetch(base,target)
+    
+      # First check to see if the file is already here and  
+      # if the checksum matches. If so, then we are already done.
+      ok = checkMD5Sum(target.getFile, target.getMD5, true) 
+      if ok
+         echoLog("#{target.getName} is already up to date.")
+         return ok
+      end
+
+      # File is missing or invalid, so get a new one
       (bname,extension)=target.getFile.split('.')
       url=sprintf("%s/%s-%s.%s", base, bname, target.getVersion,extension)
       $LOG.info("Fetching [#{target.getName}] at [#{url}]")
