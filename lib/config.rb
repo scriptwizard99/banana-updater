@@ -45,6 +45,14 @@ class ConfigInfo
 
    end
 
+   def getSelfTarget
+      return @selfTarget
+   end
+
+   def getBaseURL
+      return @baseURL
+   end
+
    def readFile
       @doc = Nokogiri::XML(File.open(@fileName)) do |config|
         config.strict.nonet

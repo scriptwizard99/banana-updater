@@ -115,10 +115,12 @@ class Downloader
    end
 
    def fetch(base,target)
+
+      targetFN="#{$binaryDir}/#{target.getFile}"
     
       # First check to see if the file is already here and  
       # if the checksum matches. If so, then we are already done.
-      ok = checkMD5Sum(target.getFile, target.getMD5, true) 
+      ok = checkMD5Sum(targetFN, target.getMD5, true) 
       if ok
          echoLog("#{target.getName} is already up to date.")
          return ok
@@ -129,8 +131,8 @@ class Downloader
       url=sprintf("%s/%s-%s.%s", base, bname, target.getVersion,extension)
       $LOG.info("Fetching [#{target.getName}] at [#{url}]")
 
-      ok = downloadFile(url, target.getSize, target.getFile)
-      ok = checkMD5Sum(target.getFile, target.getMD5) if ok
+      ok = downloadFile(url, target.getSize, targetFN)
+      ok = checkMD5Sum(targetFN, target.getMD5) if ok
       if ok
          echoLog("#{target.getName} downloaded and MD5 sum matches")
       else

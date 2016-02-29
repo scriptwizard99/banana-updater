@@ -29,7 +29,7 @@ require_relative 'lib/downloader.rb'
 UPDATER_VERSION='0.1.0'
 UPDATER_NAME='Banana Updater'
 #DEFAULT_BASE_URL='http://fallofromegame.com/alamazeorders/downloads'
-DEFAULT_BASE_URL='https://bintray.com/artifact/download/scriptwizard/generic'
+UPDATER_BASE_URL='https://bintray.com/artifact/download/scriptwizard/generic/updater'
 CONFIG_NAME='BananaUpdaterConfig.xml'
 
 UPDATER_BINARY=ENV['OCRA_EXECUTABLE']
@@ -42,6 +42,7 @@ SUPPORT_EMAIL="support@alamaze.com and scriptwizard99@gmail.com"
 $LOG=nil
 $configInfo=nil
 $downloader=nil
+$baseURL=nil
 #------------------------------------------------------------------------
 
 def echoLog(msg)
@@ -51,48 +52,92 @@ end
 
 # If we do not have a config file here, fetch one.
 def getConfigFile
-   $LOG.debug("Checking to see if #{CONFIG_NAME} exists.")
-   if File.exist?(CONFIG_NAME)
-      $LOG.debug("Config file exists. No need to fetch from afar.")
-   else
-      $LOG.info("Config file %s") # TODD stopped coding here
+#  $LOG.debug("Checking to see if #{CONFIG_NAME} exists.")
+#  if File.exist?(CONFIG_NAME)
+#     $LOG.debug("Config file exists. No need to fetch from afar.")
+#  else
+      echoLog("Fetching config file #{CONFIG_NAME}") # TODD stopped coding here
       downloadConfigFile()
-   end
+#  end
    return CONFIG_NAME
 end
 
 def downloadConfigFile
-   url="#{DEFAULT_BASE_URL}/#{CONFIG_NAME}"
-   rc = $downloader.downloadFile(url, 500, CONFIG_NAME)
+   url="#{UPDATER_BASE_URL}/#{CONFIG_NAME}"
+
+   if defined?(Ocra)
+     cfgName="junk.txt"
+   else
+     cfgName=CONFIG_NAME
+   end
+
+   rc = $downloader.downloadFile(url, 1000, cfgName)
    return rc
+end
+
+def verifyUpdater(config)
+   updater=config.getSelfTarget
+   upToDate = $downloader.checkMD5Sum("#{$binaryDir}/#{updater.getFile}", updater.getMD5, true)
+   unless upToDate
+      ok=$downloader.fetch(UPDATER_BASE_URL,updater)
+      if ok
+         echoLog("Updater self-updated. Please rerun.")
+#        runTarget(updater)
+         return false
+      else
+         echoLog("Self update failed. See TBD for help")                                        #TODO
+         exit 1
+      end
+   end
+   $LOG.info("No need to rerun updater. Continuing normally.")
+   return true
 end
 
 def runTarget(target)
    echoLog("Running #{target.getName}")
-   cwd=Dir.pwd
-   pid = Process.spawn("#{cwd}/#{target.getFile}")
+   #cwd=Dir.pwd
+   targetFN="#{$binaryDir}/#{target.getFile}"
+   $LOG.info("Full name [#{targetFN}]")
+   pid = Process.spawn(targetFN)
    Process.detach(pid)
+end
+
+def downloadTargets(cfg)
+   cfg.getListOfTargets.each do |target|
+      printf("-------------------------------------------------------\n")
+      printf("Target : %s\n", target.getName)
+      ok=$downloader.fetch($baseURL,target)
+      if ok and target.isRunable == 'true'
+         runTarget(target)
+      end
+   end
 end
 
 #<<<<<<<<<<<<<<<<<<<<<<<<<<<< START >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-$LOG=Logger.new(LOG_FILE)
+puts "Updater Binary [#{UPDATER_BINARY}]"
+$binaryDir= '.'
+$binaryDir=File.dirname(UPDATER_BINARY) unless UPDATER_BINARY.nil?
+
+
+$LOG=Logger.new("#{$binaryDir}/#{LOG_FILE}")
 $LOG.info("====================== S T A R T ======================")
+
 $downloader=Downloader.new
 
 begin
 
    cname=getConfigFile
-   cfg=ConfigInfo.new(cname)
-   cfg.getListOfTargets.each do |target|
-      printf("-------------------------------------------------------\n")
-      printf("Target : %s\n", target.getName)
-      ok=$downloader.fetch(DEFAULT_BASE_URL,target)
-#     printf("Result : %s\n", ok)
-      if ok and target.isRunable == 'true'
-         runTarget(target)
-      end
-      
+   if not defined?(Ocra)
+      cfg=ConfigInfo.new(cname)
+      $baseURL=cfg.getBaseURL
+      ok = verifyUpdater(cfg)
+      downloadTargets(cfg) if ok
+   else
+      printf("Detected that OCRA is running. Skipping remaining processing.\n")
+      $downloader.getMD5Sum("update.rb")
+      pid = Process.spawn('dir.exe')
+      Process.detach(pid)
    end
 
 
@@ -103,7 +148,9 @@ rescue Exception => e
    $LOG.error(e)
 end
 
-sleep 10
+if not defined?(Ocra)
+   sleep 30
+end
 $LOG.info("====================== E N D ======================")
 exit 0
 
